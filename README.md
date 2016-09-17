@@ -3,7 +3,7 @@ XMovies8Org.bundle
 
 This is a plugin that creates a new channel in Plex Media Server to view content indexed by the website www.xmovies8.org
 
-[Plex Support Thread] (TBA)
+[Plex Support Thread] (https://forums.plex.tv/discussion/233261)
 
 System Requirements
 ===================
