@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+HTTP_HEADERS = {
+	'Accept	text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+	'Accept-Encoding:	gzip, deflate',
+	'Accept-Language:	en-US,en;q=0.5',
+	'Connection:		keep-alive',
+	'Referer:		http://www.xmovies8.org',
+	'User-Agent:		Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'
+}
+
+########################################################################################
+def NormalizeURL(url):
+
+	return url
+
+########################################################################################
+def MetadataObjectForURL(url):
+
+	urls = url.split('&VidRes=')
+	furl = urls[0]
+	res =  urls[1].replace('p','')
+	#Log("url-----------" + furl)
+
+	title = urls[2]
+	summary = urls[3]
+	thumb = urls[4]
+
+	return VideoClipObject(
+		title = title,
+		url = furl,
+		summary = summary,
+		thumb = thumb
+	)
+
+########################################################################################
+def MediaObjectsForURL(url):
+
+	if 'VidRes' in url:
+		urls = url.split('&VidRes=')
+		furl = urls[0]
+		res =  urls[1].replace('p','')
+		return [
+			MediaObject(
+				container = Container.MP4,
+				video_codec = VideoCodec.H264,
+				video_resolution = res,
+				audio_codec = AudioCodec.AAC,
+				audio_channels = 2,
+				optimized_for_streaming = True,
+				parts = [PartObject(key=Callback(PlayVideo, url=furl))]
+			)
+		]
+	else:
+		urls = url.split('&PartVids=')
+		furl = urls[0]
+		res =  urls[1]
+		res_n = res.split('|')
+		for eachres in res_n:
+			return [
+				MediaObject(
+					container = Container.MP4,
+					video_codec = VideoCodec.H264,
+					video_resolution = eachres,
+					audio_codec = AudioCodec.AAC,
+					audio_channels = 2,
+					optimized_for_streaming = True,
+					parts = [PartObject(key=Callback(PlayVideo, url=furl))]
+				)
+			]
+
+
+########################################################################################
+@indirect
+def PlayVideo(url):
+
+	try:
+		return IndirectResponse(VideoClipObject, key=url)
+	except:
+		raise Ex.MediaNotAvailable
