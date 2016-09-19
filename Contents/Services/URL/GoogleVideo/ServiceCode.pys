@@ -25,11 +25,12 @@ def MetadataObjectForURL(url):
 	title = urls[2]
 	summary = urls[3]
 	thumb = urls[4]
-
+	
 	return VideoClipObject(
 		title = title,
 		url = furl,
 		summary = summary,
+		art = thumb,
 		thumb = thumb
 	)
 

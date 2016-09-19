@@ -249,7 +249,7 @@ def EpisodeDetail(title, url, thumb, summary):
 	summary = re.sub(r'[^0-9a-zA-Z \-/.,\':+&!()]', '?', summary)
 	title = title.replace('–',' : ')
 	title = unicode(title)
-	oc = ObjectContainer(title2 = title)
+	oc = ObjectContainer(title2 = title, art = thumb)
 
 	page_data = HTML.ElementFromURL(url)
 	elem = page_data.xpath(".//div[preceding::div[@class='title clearboth']]//text()")
@@ -433,20 +433,20 @@ def ClearSearches():
 @route(PREFIX + "/search")
 def Search(query, page_count=1):
 
+	last_page_no = page_count
 	Dict[TITLE.lower() +'MyCustomSearch'+query] = query
 	Dict.Save()
 	oc = ObjectContainer(title2='Search Results')
 
-	page_n = ''
 	try:
 		furl = BASE_URL
 		if page_count > 1:
-			furl = BASE_URL + '/results?page=' + str(page_count)
+			furl = BASE_URL + '/results?page=%s&q=%s' % (str(page_count), String.Quote(query, usePlus=True))
 
 		data = HTTP.Request(furl + '&q=%s' % String.Quote(query, usePlus=True), headers="").content
 		page_data = HTML.ElementFromString(data)
 		elem = page_data.xpath(".//div[@class='video_container b_10']//div[@class='cell_container']")
-
+		
 		for each in elem:
 			url = BASE_URL + each.xpath(".//div[@class='thumb']//a//@href")[0]
 			#Log("url -------- " + url)
@@ -464,18 +464,33 @@ def Search(query, page_count=1):
 				thumb = Resource.ContentsOfURLWithFallback(url = thumb)
 				)
 			)
+		
+		try:
+			last_page_no = page_data.xpath(".//div[@class='clearboth left']//ul//li[last()]//text()")[0]
+			if last_page_no == '>>':
+				last_page_no = page_count + 1
+			else:
+				last_page_no = int(last_page_no)
+		except:
+			pass
 	except:
 		pass
-
-	oc.add(NextPageObject(
-		key = Callback(SortMenu, title = query, page_count = int(page_count) + 1),
-		title = "Next Page (" + str(int(page_count) + 1) + ") >>",
-		thumb = R(ICON_NEXT)
-		)
-	)
-
-	if len(oc) == 1:
+		
+	if len(oc) == 0:
 		return ObjectContainer(header='Search Results', message='No More Videos Available')
+		
+	oc.add(InputDirectoryObject(key = Callback(Search, page_count=1), title='Search', summary='Search Movies', prompt='Search for...', thumb=R(ICON_SEARCH)))
+	if int(page_count) < last_page_no:
+		oc.add(NextPageObject(
+			key = Callback(Search, query = query, page_count = int(page_count) + 1),
+			title = "Next Page (" + str(int(page_count) + 1) + ") >>",
+			thumb = R(ICON_NEXT)
+			)
+		)
+	else:	
+		if int(page_count) > 2:
+			oc.add(DirectoryObject(key = Callback(ShowMenu, title = 'Movies'), title = '<< Movies', thumb = R(ICON_MOVIES)))
+
 	return oc
 
 ####################################################################################################
